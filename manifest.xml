@@ -1,0 +1,17 @@
+<package>
+  <description brief="interactive_tf_broadcaster">
+
+     interactive_tf_broadcaster
+
+  </description>
+  <author>Mikhail Medvedev</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/interactive_tf_broadcaster</url>
+  <depend package="roscpp"/>
+  <depend package="visualization_msgs"/>
+  <depend package="interactive_markers"/>
+
+</package>
+
+

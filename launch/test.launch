@@ -1,0 +1,7 @@
+<launch>
+  <node name="interactive_tf" type="tf_broadcaster" pkg="interactive_tf_broadcaster" respawn="true" output="screen">
+    <param name="tf_prefix" value="truth"/>
+  </node>
+  <node pkg="tf" type="static_transform_publisher" name="tf_broadcaster_map_to_map" args="0 0 0 0 0 0 /map /truth/map 100" />
+  <node name="my_node_killer" pkg="autokill" type="autokill" args="$(find interactive_tf_broadcaster)/bin/tf_broadcaster interactive_tf"/>
+</launch>
