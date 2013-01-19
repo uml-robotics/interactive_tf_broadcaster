@@ -33,11 +33,13 @@
 #include <interactive_markers/menu_handler.h>
 
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 #include <tf/tf.h>
 
 #include <math.h>
 
-#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <std_msgs/Float32.h>
 
 using namespace visualization_msgs;
 
@@ -45,17 +47,85 @@ boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server;
 float marker_pos = 0;
 interactive_markers::MenuHandler menu_handler;
 
-ros::Publisher pub_pose;
-void publishMarkerPose()
+ros::Publisher pub_marker_pose;
+ros::Publisher pub_pose_diff;
+ros::Publisher pub_distance;
+
+tf::TransformListener * tf_listener;
+void publishMeasurements()
 {
   InteractiveMarker marker;
   server->get("interactive_tf", marker);
   tf::Quaternion qt;
   tf::quaternionMsgToTF(marker.pose.orientation, qt);
-  pub_pose.publish(marker.pose);
+  geometry_msgs::PoseStamped marker_pose;
+  marker_pose.pose = marker.pose;
+  marker_pose.header = marker.header;
+  pub_marker_pose.publish(marker_pose);
+  {
+    ros::Time transform_time = ros::Time::now();
+
+    geometry_msgs::PoseStamped base_link_pose;
+    base_link_pose.header.stamp = transform_time;
+    base_link_pose.header.frame_id = "/base_link";
+    base_link_pose.pose.orientation.w = 1;
+    // Transform camera pose into visual_odom frame
+    try
+    {
+      tf_listener->waitForTransform("/map", "/base_link", transform_time, ros::Duration(1));
+      tf_listener->transformPose("/map", base_link_pose, base_link_pose);
+    }
+    catch (tf::TransformException &ex)
+    {
+      ROS_ERROR("%s", ex.what());
+    }
+
+    ROS_INFO_STREAM("Robot Position: "<< base_link_pose.pose.position.x <<" "<<base_link_pose.pose.position.y);
+    base_link_pose.pose.position.x -= marker.pose.position.x;
+    base_link_pose.pose.position.y -= marker.pose.position.y;
+    base_link_pose.pose.position.z -= marker.pose.position.z;
+    base_link_pose.pose.orientation.x = 0;
+    base_link_pose.pose.orientation.y = 0;
+    base_link_pose.pose.orientation.z = 0;
+    base_link_pose.pose.orientation.w = 1;
+
+    pub_pose_diff.publish(base_link_pose);
+    std_msgs::Float32 distance;
+    distance.data = pow(pow(base_link_pose.pose.position.x, 2) + pow(base_link_pose.pose.position.y, 2), 0.5);
+    pub_distance.publish(distance);
+  }
 }
 
-Marker makeBox(InteractiveMarker &msg)
+void alignWithEstimate()
+{
+  ROS_INFO("Aligning");
+  InteractiveMarker marker;
+  server->get("interactive_tf", marker);
+
+  geometry_msgs::PoseStamped base_link_pose;
+  {
+    ros::Time transform_time = ros::Time::now();
+
+    base_link_pose.header.stamp = transform_time;
+    base_link_pose.header.frame_id = "/base_link";
+    base_link_pose.pose.orientation.w = 1;
+    // Transform camera pose into visual_odom frame
+    try
+    {
+      tf_listener->waitForTransform("/map", "/base_link", transform_time, ros::Duration(1));
+      tf_listener->transformPose("/map", base_link_pose, base_link_pose);
+    }
+    catch (tf::TransformException &ex)
+    {
+      ROS_ERROR("%s", ex.what());
+    }
+  }
+
+  marker.pose = base_link_pose.pose;
+  server->insert(marker);
+}
+
+Marker makeBox(InteractiveMarker & msg)
 {
   Marker marker;
 
@@ -71,7 +141,7 @@ Marker makeBox(InteractiveMarker &msg)
   return marker;
 }
 
-InteractiveMarkerControl& makeBoxControl(InteractiveMarker &msg)
+InteractiveMarkerControl & makeBoxControl(InteractiveMarker & msg)
 {
   InteractiveMarkerControl control;
   control.always_visible = true;
@@ -115,9 +185,14 @@ void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr
     {
       ROS_INFO_STREAM(
           s.str() << ": menu item " << feedback->menu_entry_id << " clicked" << mouse_point_ss.str() << ".");
-      if (feedback->menu_entry_id == 1)
+      switch (feedback->menu_entry_id)
       {
-        publishMarkerPose();
+        case (1):
+          publishMeasurements();
+          break;
+        case (2):
+          alignWithEstimate();
+          break;
       }
 
       break;
@@ -309,8 +384,11 @@ void make6DofMarker(bool fixed)
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "basic_controls");
+  tf_listener = new tf::TransformListener();
   ros::NodeHandle n;
-  pub_pose = n.advertise<geometry_msgs::Pose>("/measurement/pose_truth", 1);
+  pub_marker_pose = n.advertise<geometry_msgs::PoseStamped>("/measurement/pose_truth", 1);
+  pub_pose_diff = n.advertise<geometry_msgs::PoseStamped>("/measurement/pose_diff", 1);
+  pub_distance = n.advertise<std_msgs::Float32>("/measurement/distance", 1);
 
   // create a timer to update the published transforms
   ros::Timer frame_timer = n.createTimer(ros::Duration(0.01), frameCallback);
@@ -320,7 +398,7 @@ int main(int argc, char** argv)
   ros::Duration(0.1).sleep();
 
   menu_handler.insert("Publish", &processFeedback);
-//  menu_handler.insert("Second Entry", &processFeedback);
+  menu_handler.insert("Align with pose estimate", &processFeedback);
 //  interactive_markers::MenuHandler::EntryHandle sub_menu_handle = menu_handler.insert("Submenu");
 //  menu_handler.insert(sub_menu_handle, "First Entry", &processFeedback);
 //  menu_handler.insert(sub_menu_handle, "Second Entry", &processFeedback);
