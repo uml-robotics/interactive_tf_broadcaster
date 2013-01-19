@@ -297,8 +297,6 @@ void make6DofMarker(bool fixed)
   control.orientation.y = 0;
   control.orientation.z = 0;
   control.name = "rotate_x";
-  control.interaction_mode = InteractiveMarkerControl::ROTATE_AXIS;
-  int_marker.controls.push_back(control);
   control.name = "move_x";
   control.interaction_mode = InteractiveMarkerControl::MOVE_AXIS;
   int_marker.controls.push_back(control);
@@ -310,17 +308,12 @@ void make6DofMarker(bool fixed)
   control.name = "rotate_z";
   control.interaction_mode = InteractiveMarkerControl::ROTATE_AXIS;
   int_marker.controls.push_back(control);
-//  control.name = "move_z";
-//  control.interaction_mode = InteractiveMarkerControl::MOVE_AXIS;
-//  int_marker.controls.push_back(control);
 
   control.orientation.w = 1;
   control.orientation.x = 0;
   control.orientation.y = 0;
   control.orientation.z = 1;
   control.name = "rotate_y";
-  control.interaction_mode = InteractiveMarkerControl::ROTATE_AXIS;
-  int_marker.controls.push_back(control);
   control.name = "move_y";
   control.interaction_mode = InteractiveMarkerControl::MOVE_AXIS;
   int_marker.controls.push_back(control);
@@ -330,56 +323,6 @@ void make6DofMarker(bool fixed)
   server->setCallback(int_marker.name, &processFeedback);
   menu_handler.apply(*server, int_marker.name);
 }
-//
-//void makeMenuMarker()
-//{
-//  InteractiveMarker int_marker;
-//  int_marker.header.frame_id = "base_link";
-//  int_marker.pose.position.y = -3.0 * marker_pos++;
-//  ;
-//  int_marker.scale = 1;
-//
-//  int_marker.name = "context_menu";
-//  int_marker.description = "Context Menu\n(Right Click)";
-//
-//  InteractiveMarkerControl control;
-//
-//  control.interaction_mode = InteractiveMarkerControl::MENU;
-//  control.name = "menu_only_control";
-//
-//  Marker marker = makeBox(int_marker);
-//  control.markers.push_back(marker);
-//  control.always_visible = true;
-//  int_marker.controls.push_back(control);
-//
-//  server->insert(int_marker);
-//  server->setCallback(int_marker.name, &processFeedback);
-//  menu_handler.apply(*server, int_marker.name);
-//}
-
-//void makeButtonMarker()
-//{
-//  InteractiveMarker int_marker;
-//  int_marker.header.frame_id = "base_link";
-//  int_marker.pose.position.y = -3.0 * marker_pos++;;
-//  int_marker.scale = 1;
-//
-//  int_marker.name = "button";
-//  int_marker.description = "Button\n(Left Click)";
-//
-//  InteractiveMarkerControl control;
-//
-//  control.interaction_mode = InteractiveMarkerControl::BUTTON;
-//  control.name = "button_control";
-//
-//  Marker marker = makeBox( int_marker );
-//  control.markers.push_back( marker );
-//  control.always_visible = true;
-//  int_marker.controls.push_back(control);
-//
-//  server->insert(int_marker);
-//  server->setCallback(int_marker.name, &processFeedback);
-//}
 
 int main(int argc, char** argv)
 {
