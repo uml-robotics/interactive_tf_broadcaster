@@ -151,7 +151,7 @@ InteractiveMarkerControl & makeBoxControl(InteractiveMarker & msg)
   return msg.controls.back();
 }
 
-void frameCallback(const ros::TimerEvent&)
+void frameCallback(const ros::WallTimerEvent&)
 {
   static tf::TransformBroadcaster br;
   tf::Transform t;
@@ -334,7 +334,7 @@ int main(int argc, char** argv)
   pub_distance = n.advertise<std_msgs::Float32>("/measurement/distance", 1);
 
   // create a timer to update the published transforms
-  ros::Timer frame_timer = n.createTimer(ros::Duration(0.01), frameCallback);
+  ros::WallTimer frame_timer = n.createWallTimer(ros::WallDuration(0.01), frameCallback);
 
   server.reset(new interactive_markers::InteractiveMarkerServer("basic_controls", "", false));
 
