@@ -136,7 +136,7 @@ Marker makeBox(InteractiveMarker & msg)
   marker.color.r = 0.5;
   marker.color.g = 0.5;
   marker.color.b = 0.5;
-  marker.color.a = 1.0;
+  marker.color.a = 0.3;
 
   return marker;
 }
@@ -187,10 +187,10 @@ void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr
           s.str() << ": menu item " << feedback->menu_entry_id << " clicked" << mouse_point_ss.str() << ".");
       switch (feedback->menu_entry_id)
       {
-        case (1):
+        case (3):
           publishMeasurements();
           break;
-        case (2):
+        case (1):
           alignWithEstimate();
           break;
       }
@@ -262,44 +262,12 @@ void make6DofMarker(bool fixed)
 {
   InteractiveMarker int_marker;
   int_marker.header.frame_id = "map";
-  int_marker.pose.position.y = -3.0 * marker_pos++;
-  ;
-  int_marker.scale = 1;
+  int_marker.scale = 5;
 
   int_marker.name = "interactive_tf";
   int_marker.description = "Interactive TF Publisher";
 
-  // insert a box
-//  makeBoxControl(int_marker);
-
-  {
-    InteractiveMarkerControl control;
-    control.interaction_mode = InteractiveMarkerControl::MENU;
-    control.name = "menu_only_control";
-
-    Marker marker = makeBox(int_marker);
-    control.markers.push_back(marker);
-    control.always_visible = true;
-    int_marker.controls.push_back(control);
-  }
-
   InteractiveMarkerControl control;
-
-  if (fixed)
-  {
-    int_marker.name += "_fixed";
-    int_marker.description += "\n(fixed orientation)";
-    control.orientation_mode = InteractiveMarkerControl::FIXED;
-  }
-
-  control.orientation.w = 1;
-  control.orientation.x = 1;
-  control.orientation.y = 0;
-  control.orientation.z = 0;
-  control.name = "rotate_x";
-  control.name = "move_x";
-  control.interaction_mode = InteractiveMarkerControl::MOVE_AXIS;
-  int_marker.controls.push_back(control);
 
   control.orientation.w = 1;
   control.orientation.x = 0;
@@ -309,13 +277,15 @@ void make6DofMarker(bool fixed)
   control.interaction_mode = InteractiveMarkerControl::ROTATE_AXIS;
   int_marker.controls.push_back(control);
 
+
   control.orientation.w = 1;
   control.orientation.x = 0;
-  control.orientation.y = 0;
-  control.orientation.z = 1;
-  control.name = "rotate_y";
-  control.name = "move_y";
-  control.interaction_mode = InteractiveMarkerControl::MOVE_AXIS;
+  control.orientation.y = 1;
+  control.orientation.z = 0;
+  control.interaction_mode = InteractiveMarkerControl::MOVE_PLANE;
+  control.name = "move";
+  control.markers.push_back( makeBox(int_marker) );
+  control.always_visible = true;
   int_marker.controls.push_back(control);
 
   int_marker.pose.orientation.w = 1;
@@ -340,15 +310,11 @@ int main(int argc, char** argv)
 
   ros::Duration(0.1).sleep();
 
-  menu_handler.insert("Publish", &processFeedback);
   menu_handler.insert("Align with pose estimate", &processFeedback);
-//  interactive_markers::MenuHandler::EntryHandle sub_menu_handle = menu_handler.insert("Submenu");
-//  menu_handler.insert(sub_menu_handle, "First Entry", &processFeedback);
-//  menu_handler.insert(sub_menu_handle, "Second Entry", &processFeedback);
+  interactive_markers::MenuHandler::EntryHandle sub_menu_handle = menu_handler.insert("Save");
+  menu_handler.insert(sub_menu_handle, "Publish the measurement", &processFeedback);
 
   make6DofMarker(false);
-//  make6DofMarker( true );
-//  makeMenuMarker();
 
   server->applyChanges();
 
