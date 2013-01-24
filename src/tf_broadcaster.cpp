@@ -35,6 +35,7 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <tf/tf.h>
+#include <angles/angles.h>
 
 #include <math.h>
 
@@ -50,14 +51,13 @@ interactive_markers::MenuHandler menu_handler;
 ros::Publisher pub_marker_pose;
 ros::Publisher pub_pose_diff;
 ros::Publisher pub_distance;
+ros::Publisher pub_yaw_diff;
 
 tf::TransformListener * tf_listener;
 void publishMeasurements()
 {
   InteractiveMarker marker;
   server->get("interactive_tf", marker);
-  tf::Quaternion qt;
-  tf::quaternionMsgToTF(marker.pose.orientation, qt);
   geometry_msgs::PoseStamped marker_pose;
   marker_pose.pose = marker.pose;
   marker_pose.header = marker.header;
@@ -79,6 +79,10 @@ void publishMeasurements()
     {
       ROS_ERROR("%s", ex.what());
     }
+    tf::Quaternion qt1;
+    tf::quaternionMsgToTF(marker.pose.orientation, qt1);
+    tf::Quaternion qt2;
+    tf::quaternionMsgToTF(base_link_pose.pose.orientation, qt2);
 
     ROS_INFO_STREAM("Robot Position: "<< base_link_pose.pose.position.x <<" "<<base_link_pose.pose.position.y);
     base_link_pose.pose.position.x -= marker.pose.position.x;
@@ -93,6 +97,10 @@ void publishMeasurements()
     std_msgs::Float32 distance;
     distance.data = pow(pow(base_link_pose.pose.position.x, 2) + pow(base_link_pose.pose.position.y, 2), 0.5);
     pub_distance.publish(distance);
+
+    std_msgs::Float32 yaw_diff;
+    yaw_diff.data = fabs(angles::normalize_angle(tf::getYaw(qt1) - tf::getYaw(qt2)));
+    pub_yaw_diff.publish(yaw_diff);
   }
 }
 
@@ -277,14 +285,13 @@ void make6DofMarker(bool fixed)
   control.interaction_mode = InteractiveMarkerControl::ROTATE_AXIS;
   int_marker.controls.push_back(control);
 
-
   control.orientation.w = 1;
   control.orientation.x = 0;
   control.orientation.y = 1;
   control.orientation.z = 0;
   control.interaction_mode = InteractiveMarkerControl::MOVE_PLANE;
   control.name = "move";
-  control.markers.push_back( makeBox(int_marker) );
+  control.markers.push_back(makeBox(int_marker));
   control.always_visible = true;
   int_marker.controls.push_back(control);
 
@@ -302,6 +309,7 @@ int main(int argc, char** argv)
   pub_marker_pose = n.advertise<geometry_msgs::PoseStamped>("/measurement/pose_truth", 1);
   pub_pose_diff = n.advertise<geometry_msgs::PoseStamped>("/measurement/pose_diff", 1);
   pub_distance = n.advertise<std_msgs::Float32>("/measurement/distance", 1);
+  pub_yaw_diff = n.advertise<std_msgs::Float32>("/measurement/yaw_diff", 1);
 
   // create a timer to update the published transforms
   ros::Timer frame_timer = n.createTimer(ros::Duration(0.01), frameCallback);
