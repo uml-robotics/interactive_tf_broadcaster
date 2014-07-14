@@ -1,7 +1,7 @@
 <package>
   <description brief="interactive_tf_broadcaster">
 
-     interactive_tf_broadcaster
+    Allow to adjust published transform using rviz interactive markers.
 
   </description>
   <author>Mikhail Medvedev</author>
