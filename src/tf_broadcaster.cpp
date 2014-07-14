@@ -84,7 +84,7 @@ void publishMeasurements()
     tf::Quaternion qt2;
     tf::quaternionMsgToTF(base_link_pose.pose.orientation, qt2);
 
-    ROS_INFO_STREAM("Robot Position: "<< base_link_pose.pose.position.x <<" "<<base_link_pose.pose.position.y);
+    ROS_DEBUG_STREAM("Robot Position: "<< base_link_pose.pose.position.x <<" "<<base_link_pose.pose.position.y);
     base_link_pose.pose.position.x -= marker.pose.position.x;
     base_link_pose.pose.position.y -= marker.pose.position.y;
     base_link_pose.pose.position.z -= marker.pose.position.z;
@@ -186,12 +186,12 @@ void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr
   switch (feedback->event_type)
   {
     case visualization_msgs::InteractiveMarkerFeedback::BUTTON_CLICK:
-      ROS_INFO_STREAM( s.str() << ": button click" << mouse_point_ss.str() << ".");
+      ROS_DEBUG_STREAM( s.str() << ": button click" << mouse_point_ss.str() << ".");
       break;
 
     case visualization_msgs::InteractiveMarkerFeedback::MENU_SELECT:
     {
-      ROS_INFO_STREAM(
+      ROS_DEBUG_STREAM(
           s.str() << ": menu item " << feedback->menu_entry_id << " clicked" << mouse_point_ss.str() << ".");
       switch (feedback->menu_entry_id)
       {
@@ -208,7 +208,7 @@ void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr
 
     case visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE:
     {
-      ROS_INFO_STREAM(
+      ROS_DEBUG_STREAM(
           s.str() << ": pose changed" << "\nposition = " << feedback->pose.position.x << ", " << feedback->pose.position.y << ", " << feedback->pose.position.z << "\norientation = " << feedback->pose.orientation.w << ", " << feedback->pose.orientation.x << ", " << feedback->pose.orientation.y << ", " << feedback->pose.orientation.z << "\nframe: " << feedback->header.frame_id << " time: " << feedback->header.stamp.sec << "sec, " << feedback->header.stamp.nsec << " nsec");
       {
         InteractiveMarker marker;
@@ -227,11 +227,11 @@ void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr
     }
 
     case visualization_msgs::InteractiveMarkerFeedback::MOUSE_DOWN:
-      ROS_INFO_STREAM( s.str() << ": mouse down" << mouse_point_ss.str() << ".");
+      ROS_DEBUG_STREAM( s.str() << ": mouse down" << mouse_point_ss.str() << ".");
       break;
 
     case visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP:
-      ROS_INFO_STREAM( s.str() << ": mouse up" << mouse_point_ss.str() << ".");
+      ROS_DEBUG_STREAM( s.str() << ": mouse up" << mouse_point_ss.str() << ".");
       break;
   }
 
@@ -245,7 +245,7 @@ void alignMarker(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &fe
   pose.position.x = round(pose.position.x - 0.5) + 0.5;
   pose.position.y = round(pose.position.y - 0.5) + 0.5;
 
-  ROS_INFO_STREAM(
+  ROS_DEBUG_STREAM(
       feedback->marker_name << ":" << " aligning position = " << feedback->pose.position.x << ", " << feedback->pose.position.y << ", " << feedback->pose.position.z << " to " << pose.position.x << ", " << pose.position.y << ", " << pose.position.z);
 
   server->setPose(feedback->marker_name, pose);
